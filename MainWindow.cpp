@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->resource_list, &QTreeWidget::itemDoubleClicked,
             this, &MainWindow::selectResource);
-
+ 
     checkResource();
 }
 
@@ -53,12 +53,14 @@ MainWindow::~MainWindow()
 
 void MainWindow::initWindow()
 {
+    // 设置“开始”和“暂停”按钮的的颜色
     ui->start_button->setStyleSheet("background-color: rgb(255, 0, 0);");
 
     ui->pause_button->setStyleSheet("background-color: rgb(160, 160, 160);");
 
     ui->volume_slider->setValue(40);
 
+    // 窗口重定位到桌面中央
     QDesktopWidget* desktop = QApplication::desktop();
 
     move(desktop->width() / 2 - width() / 2,
@@ -68,10 +70,11 @@ void MainWindow::initWindow()
     auto directory = QCoreApplication::applicationDirPath();
 
     player->setVolume(40);
-}
+}   
 
 void MainWindow::start()
 {
+    // 如果用户还没有指定要播放的音频， status bar报错
     if (player->isMetaDataAvailable())
     {
         player->play();
@@ -87,6 +90,7 @@ void MainWindow::pause()
     player->pause();
 }
 
+// 根据音频进度更新进度条
 void MainWindow::updateProgressByTick()
 {
     if (player->state() == QMediaPlayer::State::PlayingState)
@@ -99,6 +103,7 @@ void MainWindow::updateProgressByTick()
     }
 }
 
+// 根据进度条更新音频进度
 void MainWindow::updateProgressBySlider()
 {
     double rate = ui->progress_slider->value() / 100.0;
@@ -117,8 +122,11 @@ void MainWindow::updateVolume()
     player->setVolume(ui->volume_slider->value());
 }
 
+// 匿名空间里的东西全部都是为了 评估 用户提交的听写内容
+// 核心： 求最短编辑距离（动态规划）， 返回编辑方法 
 namespace {
 
+// 标识每个单词的状态
 enum class State
 {
     KEPT, REMOVED, INSERTED
@@ -196,6 +204,7 @@ const int REMOVE_EXPENSE = 2;
 const int INSERT_EXPENSE = 2;
 const int KEEP_EXPENSE = 0;
 
+// 递归求最短距离， 并把编辑路线记在 memo 里面
 int search(const QStringList* answerWords,
            const QStringList* scriptWords,
            int answerId, int scriptId,
@@ -270,6 +279,7 @@ int search(const QStringList* answerWords,
     }
 }
 
+// 把 memo 中的路线提取出来
 QSharedPointer<QList<WordState>> search(const QStringList* answerWords,
                                         const QStringList* scriptWords)
 {
@@ -333,6 +343,7 @@ QSharedPointer<QList<WordState>> search(const QStringList* answerWords,
 
 void MainWindow::evaluate()
 {
+    // 用户还没有指定音频
     if (textFile.isEmpty())
     {
         statusBar()->showMessage("resource not assigned", 2000);
@@ -348,6 +359,7 @@ void MainWindow::evaluate()
 
     QFile path(textFile);
 
+    // 有音频， 但是没有原文
     if (!path.open(QIODevice::ReadOnly | QIODevice::Text))
     {
         qDebug() << textFile;
@@ -368,7 +380,10 @@ void MainWindow::evaluate()
 
     ui->script_edit->clear();
 
-
+    // 下面是把编辑路线输出到QTextEdit里面
+    // 正确的单词为黑色
+    // 遗漏的单词为红色
+    // 多余的单词为蓝色
     QTextCharFormat keptFormat;
     keptFormat.setForeground(QBrush(Qt::GlobalColor::black));
 
@@ -409,6 +424,13 @@ enum TreeItemType
     SECTION
 };
 
+// 搜索工作目录下的资源文件
+// 以树的形式显示导窗口上
+// 文件存放路径：
+// 工作目录/
+//      section/ （一大段音频分成几个小节， 放在一个目录里面）
+//          once.mp3 
+//          once （原文， 文本格式）        
 void MainWindow::checkResource()
 {
     QString path = QCoreApplication::applicationDirPath();
@@ -452,6 +474,7 @@ void MainWindow::checkResource()
         }
     }
 }
+
 
 void MainWindow::selectResource(QTreeWidgetItem* item, int)
 {
