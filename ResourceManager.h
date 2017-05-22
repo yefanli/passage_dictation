@@ -6,6 +6,7 @@ class ResourceManager
 public:
     ResourceManager();
 
+
 };
 
 #endif // RESOURCEMANAGER_H

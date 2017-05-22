@@ -4,9 +4,9 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui webenginewidgets
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets multimedia
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets multimedia sql
 
 CONFIG += c++14
 
@@ -27,11 +27,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += main.cpp \
     MainWindow.cpp \
-    ResourceManager.cpp
+    ResourceManager.cpp \
+    Dictionary.cpp
 
 HEADERS  += \
     MainWindow.h \
-    ResourceManager.h
+    ResourceManager.h \
+    Dictionary.h
 
 FORMS    += \
     MainWindow.ui
+
+LIBS += -lhunspell

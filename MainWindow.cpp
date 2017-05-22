@@ -1,21 +1,100 @@
 #include <QMediaPlayer>
 #include <QDesktopWidget>
 #include <QSharedPointer>
+#include <QWebEngineView>
 #include <QColor>
 #include <QFile>
 #include <QThread>
 #include <QTimer>
 #include <QDir>
+#include <QMimeData>
+#include <QTextBlock>
+#include <QSyntaxHighlighter>
+#include <QMenu>
+
+#include <hunspell/hunspell.h>
 
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 
+namespace
+{
+
+class WordHighlighter : QSyntaxHighlighter
+{
+public:
+    WordHighlighter(QWidget* parent)
+        : QSyntaxHighlighter(parent)
+        , handle(nullptr)
+        , pattern("\\w+")
+    {
+        QString workingDirectory = QCoreApplication::applicationDirPath();
+
+        QString aff = workingDirectory + "/en_US/en_US.aff";
+        QString dic = workingDirectory + "/en_US/en_US.dic";
+
+        handle = Hunspell_create(aff.toLocal8Bit(), dic.toLocal8Bit());
+
+        right.setForeground(Qt::black);
+        error.setForeground(Qt::red);
+    }
+
+    ~WordHighlighter()
+    {
+        if (handle)
+        {
+            Hunspell_destroy(handle);
+        }
+    }
+
+protected:
+    void highlightBlock(const QString& text) override
+    {
+        if (!handle)
+        {
+            setFormat(0, text.length(), right);
+            return;
+        }
+
+        int index = 0;
+        int length = 0;
+
+        while ((index = text.indexOf(pattern, index + length)) != -1)
+        {
+            length = pattern.matchedLength();
+
+            if (Hunspell_spell(handle, text.mid(index, length).toLocal8Bit()))
+            {
+                setFormat(index, length, right);
+            }
+            else
+            {
+                setFormat(index, length, error);
+            }
+        }
+    }
+
+private:
+    Hunhandle* handle;
+    QRegExp pattern;
+    QTextCharFormat right;
+    QTextCharFormat error;
+};
+
+} //! end anonymous namespace
+
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    player(new QMediaPlayer(this))
+    player(new QMediaPlayer(this)),
+    resourceMenu(new QMenu(this))
 {
     ui->setupUi(this);
+
+    webView = new QWebEngineView(ui->search_frame);
+
+    new WordHighlighter(ui->script_edit);
 
     initWindow();
 
@@ -42,8 +121,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->resource_list, &QTreeWidget::itemDoubleClicked,
             this, &MainWindow::selectResource);
- 
+
+    connect(ui->tabWidget, &QTabWidget::currentChanged,
+            [this](int i) { if (i == 2) this->translateWord(); });
+
+    connect(ui->resource_list, &QTreeWidget::customContextMenuRequested,
+            this, &MainWindow::popResourceMenu);
+
     checkResource();
+
+    ui->tabWidget->setCurrentIndex(0);
 }
 
 MainWindow::~MainWindow()
@@ -60,16 +147,19 @@ void MainWindow::initWindow()
 
     ui->volume_slider->setValue(40);
 
+    ui->resource_list->setContextMenuPolicy(Qt::CustomContextMenu);
+
     // 窗口重定位到桌面中央
     QDesktopWidget* desktop = QApplication::desktop();
 
     move(desktop->width() / 2 - width() / 2,
          desktop->height() / 2 - height() / 2);
 
-
-    auto directory = QCoreApplication::applicationDirPath();
-
     player->setVolume(40);
+
+    webView->setZoomFactor(0.9);
+
+    webView->show();
 }   
 
 void MainWindow::start()
@@ -124,8 +214,8 @@ void MainWindow::updateVolume()
 
 // 匿名空间里的东西全部都是为了 评估 用户提交的听写内容
 // 核心： 求最短编辑距离（动态规划）， 返回编辑方法 
-namespace {
-
+namespace
+{
 // 标识每个单词的状态
 enum class State
 {
@@ -424,13 +514,6 @@ enum TreeItemType
     SECTION
 };
 
-// 搜索工作目录下的资源文件
-// 以树的形式显示导窗口上
-// 文件存放路径：
-// 工作目录/
-//      section/ （一大段音频分成几个小节， 放在一个目录里面）
-//          once.mp3 
-//          once （原文， 文本格式）        
 void MainWindow::checkResource()
 {
     QString path = QCoreApplication::applicationDirPath();
@@ -475,7 +558,6 @@ void MainWindow::checkResource()
     }
 }
 
-
 void MainWindow::selectResource(QTreeWidgetItem* item, int)
 {
     if (item->type() == TreeItemType::UNIT)
@@ -494,7 +576,66 @@ void MainWindow::selectResource(QTreeWidgetItem* item, int)
         textFile = resourcePath.remove(".mp3");
 
         statusBar()->showMessage("resource selected", 2000);
+
     }
+}
+
+void MainWindow::translateWord()
+{
+    static QString base("http://www.bing.com/dict/search?q=");
+
+    QTextCursor cursor = ui->script_edit->textCursor();
+
+    if (cursor.hasSelection())
+    {
+        QString word = cursor.selectedText();
+
+        statusBar()->showMessage("translating ...", 2000);
+
+        webView->load(base + word);
+    }
+    else if (!webView->url().isValid())
+    {
+        webView->load(base + "hello");
+    }
+}
+
+void MainWindow::popResourceMenu(QPoint position)
+{
+    QTreeWidgetItem* item = ui->resource_list->itemAt(position);
+
+    if (item && item->type() == TreeItemType::UNIT)
+    {
+        resourceMenu->clear();
+
+        resourceMenu->addAction("play", [this, item]()
+        {
+           this->selectResource(item, 0);
+           this->ui->tabWidget->setCurrentIndex(1);
+        });
+
+        resourceMenu->addSeparator();
+
+        resourceMenu->addAction("information", [this, item]
+        {
+            this->ui->tabWidget->setCurrentIndex(3);
+            this->showInformation(item->text(0));
+        });
+
+        resourceMenu->addSeparator();
+
+        resourceMenu->addMenu("delete")->addAction("yes", [item]
+        {
+            item->parent()->removeChild(item);
+        });
+
+        resourceMenu->exec(QCursor::pos());
+    }
+}
+
+void MainWindow::showInformation(QString name)
+{
+
 }
 
 QString MainWindow::timeString() const

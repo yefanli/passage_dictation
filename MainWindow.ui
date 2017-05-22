@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>648</width>
-    <height>557</height>
+    <width>653</width>
+    <height>555</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,17 +26,17 @@
     <property name="currentIndex">
      <number>0</number>
     </property>
-    <widget class="QWidget" name="tab_2">
+    <widget class="QWidget" name="list_tab">
      <attribute name="title">
-      <string>Tab 2</string>
+      <string>resoure</string>
      </attribute>
      <widget class="QTreeWidget" name="resource_list">
       <property name="geometry">
        <rect>
-        <x>30</x>
-        <y>30</y>
-        <width>561</width>
-        <height>411</height>
+        <x>10</x>
+        <y>20</y>
+        <width>601</width>
+        <height>421</height>
        </rect>
       </property>
       <column>
@@ -46,9 +46,9 @@
       </column>
      </widget>
     </widget>
-    <widget class="QWidget" name="tab">
+    <widget class="QWidget" name="dicate_tab">
      <attribute name="title">
-      <string>Tab 1</string>
+      <string>dicate</string>
      </attribute>
      <widget class="QFrame" name="frame">
       <property name="geometry">
@@ -143,6 +143,19 @@
         <string>volume</string>
        </property>
       </widget>
+      <widget class="QLabel" name="label">
+       <property name="geometry">
+        <rect>
+         <x>330</x>
+         <y>40</y>
+         <width>67</width>
+         <height>17</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>TextLabel</string>
+       </property>
+      </widget>
      </widget>
      <widget class="QTextEdit" name="script_edit">
       <property name="geometry">
@@ -181,6 +194,42 @@
       </property>
       <property name="text">
        <string>save</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="translate_tab">
+     <attribute name="title">
+      <string>translate</string>
+     </attribute>
+     <widget class="QFrame" name="search_frame">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>601</width>
+        <height>421</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="information_tab">
+     <attribute name="title">
+      <string>information</string>
+     </attribute>
+     <widget class="QTextEdit" name="textEdit">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>20</y>
+        <width>601</width>
+        <height>421</height>
+       </rect>
       </property>
      </widget>
     </widget>

@@ -5,6 +5,8 @@
 
 class QMediaPlayer;
 class QTreeWidgetItem;
+class QWebEngineView;
+class SpellChecker;
 
 namespace Ui {
 class MainWindow;
@@ -40,6 +42,10 @@ private slots:
     // 根据用户的的选择更选音频
     void selectResource(QTreeWidgetItem* item, int column);
 
+    void translateWord();
+
+    void popResourceMenu(QPoint position);
+
 private:
     // 初始化窗口的部分属性
     void initWindow();
@@ -47,13 +53,16 @@ private:
     // 搜索工作目录中的资源文件
     void checkResource();
 
+    void showInformation(QString name);
+
     // 把音频进度转换为时间字符串
     QString timeString() const;
 
 private:
     Ui::MainWindow *ui;
     QMediaPlayer* player;
-    
+    QWebEngineView* webView;
+    QMenu* resourceMenu;
     // 正在播放的音频对应的原文
     QString textFile;
 };
