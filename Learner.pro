@@ -27,15 +27,21 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += main.cpp \
     MainWindow.cpp \
-    ResourceManager.cpp \
-    Dictionary.cpp
+    Dictionary.cpp \
+    player/Player.cpp \
+    Assessor/Assessor.cpp \
+    Assessor/Word.cpp
 
 HEADERS  += \
     MainWindow.h \
-    ResourceManager.h \
-    Dictionary.h
+    Dictionary.h \
+    player/Player.h \
+    Assessor/Assessor.h \
+    Assessor/Word.h \
+    Assessor/WordAction.h
 
 FORMS    += \
     MainWindow.ui
 
 LIBS += -lhunspell
+

@@ -16,6 +16,7 @@
 
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
+#include "Assessor/Assessor.h"
 
 namespace
 {
@@ -222,10 +223,10 @@ enum class State
     KEPT, REMOVED, INSERTED
 };
 
-class WordState
+class WordAction
 {
 public:
-    WordState(const QString& word, State state)
+    WordAction(const QString& word, State state)
         : word(word)
         , state(state)
     {
@@ -370,14 +371,14 @@ int search(const QStringList* answerWords,
 }
 
 // 把 memo 中的路线提取出来
-QSharedPointer<QList<WordState>> search(const QStringList* answerWords,
+QSharedPointer<QList<WordAction>> search(const QStringList* answerWords,
                                         const QStringList* scriptWords)
 {
     Memo memo;
 
     search(answerWords, scriptWords, 0, 0, &memo);
 
-    auto wordStateList = QSharedPointer<QList<WordState>>::create();
+    auto wordStateList = QSharedPointer<QList<WordAction>>::create();
 
     auto current = makeCoordinate(0, 0);
     auto iter = memo.end();
@@ -393,13 +394,13 @@ QSharedPointer<QList<WordState>> search(const QStringList* answerWords,
         {
             word = &answerWords->at(getX(current));
 
-            wordStateList->push_back(WordState(*word, state));
+            wordStateList->push_back(WordAction(*word, state));
         }
         else
         {
             word = &scriptWords->at(getY(current));
 
-            wordStateList->push_back(WordState(*word, state));
+            wordStateList->push_back(WordAction(*word, state));
         }
 
         current = next;
@@ -410,7 +411,7 @@ QSharedPointer<QList<WordState>> search(const QStringList* answerWords,
         for (int i = getY(current), bound = scriptWords->size();
              i < bound; ++i)
         {
-            auto w = WordState(scriptWords->at(i), State::REMOVED);
+            auto w = WordAction(scriptWords->at(i), State::REMOVED);
 
             wordStateList->push_back(w);
         }
@@ -420,7 +421,7 @@ QSharedPointer<QList<WordState>> search(const QStringList* answerWords,
         for (int i = getX(current), bound = answerWords->size();
              i < bound; ++i)
         {
-            auto w = WordState(answerWords->at(i), State::INSERTED);
+            auto w = WordAction(answerWords->at(i), State::INSERTED);
 
             wordStateList->push_back(w);
         }
@@ -483,7 +484,7 @@ void MainWindow::evaluate()
     QTextCharFormat removedFormat;
     removedFormat.setForeground(QBrush(Qt::GlobalColor::blue));
 
-    for (const WordState& s : *list)
+    for (const WordAction& s : *list)
     {
         switch (s.getState())
         {
